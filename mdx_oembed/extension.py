@@ -17,11 +17,12 @@ class OEmbedExtension(Extension):
         }
         super(OEmbedExtension, self).__init__(**kwargs)
 
-    def extendMarkdown(self, md, md_globals):
+    def extendMarkdown(self, md):
         self.oembed_consumer = self.prepare_oembed_consumer()
         link_pattern = OEmbedLinkPattern(OEMBED_LINK_RE, md,
                                          self.oembed_consumer)
-        md.inlinePatterns.add('oembed_link', link_pattern, '<image_link')
+        md.inlinePatterns.register(link_pattern, 'oembed_link', 75)
+        
 
     def prepare_oembed_consumer(self):
         allowed_endpoints = self.getConfig('allowed_endpoints', DEFAULT_ENDPOINTS)
