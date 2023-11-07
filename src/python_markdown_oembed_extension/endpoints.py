@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import oembed
 
 YOUTUBE = oembed.OEmbedEndpoint('https://www.youtube.com/oembed', [

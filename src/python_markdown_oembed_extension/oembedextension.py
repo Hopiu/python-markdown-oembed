@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 from markdown import Extension
 import oembed
-from mdx_oembed.endpoints import DEFAULT_ENDPOINTS
-from mdx_oembed.inlinepatterns import OEmbedLinkPattern, OEMBED_LINK_RE
+from python_markdown_oembed_extension.endpoints import DEFAULT_ENDPOINTS
+from python_markdown_oembed_extension.inlinepatterns import OEmbedLinkPattern, OEMBED_LINK_RE
 
 
 class OEmbedExtension(Extension):
@@ -28,7 +27,8 @@ class OEmbedExtension(Extension):
         consumer = oembed.OEmbedConsumer()
 
         if allowed_endpoints:
-            for endpoint in allowed_endpoints:
+           for endpoint in allowed_endpoints:
                 consumer.addEndpoint(endpoint)
 
         return consumer
+

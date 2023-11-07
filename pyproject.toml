@@ -1,0 +1,46 @@
+[build-system]
+build-backend = "flit_core.buildapi"
+requires = ["flit_core >=3.8.0,<4"]
+
+[project]
+name = "python_markdown-oembed_extension"
+version = "0.0.0"
+authors = [
+    {name = "nmc", email = "contact-nmc@unibas.ch"},
+]
+description = "Detect inline pattern starting with '![', use the following data to request oembed data from the video hoster and create appropriate iframe html"
+readme = "README.md"
+requires-python = ">=3.7"
+keywords = ["markdown", "html", "oembed"]
+license = {text = "GPLv3"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "python-oembed",
+    "markdown",
+    "requests",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pylint ~=2.14.0",
+    "toml ~=0.10.2",
+    "yapf ~=0.32.0",
+]
+test = [
+    "pytest-cov ~=3.0.0",
+    "requests_mock",
+    "pyyaml",
+]
+
+[project.scripts]
+my-script = "my_package.module:function"
+
+[tool.coverage.run]
+source = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "--cov --cov-report html --cov-report term-missing --cov-fail-under 15"
+# ... other project metadata fields as specified in:
+#     https://packaging.python.org/en/latest/specifications/declaring-project-metadata/

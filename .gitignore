@@ -2,7 +2,10 @@
 .idea
 /dist
 /.eggs
-/venv
+venv
 *.pyc
 *.egg
 *.egg-info
+*.coverage
+*.swp
+*.swo
