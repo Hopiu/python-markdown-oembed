@@ -71,7 +71,7 @@ A Public Domain work. Do as you wish.
 
 ## Changelog
 
-### 0.3.0
+### 0.4.0
 
 - **Breaking:** requires Python >= 3.9 and Markdown >= 3.2
 - Migrated from deprecated `Pattern` to `InlineProcessor` (Markdown 3.2+ compatible)

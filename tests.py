@@ -3,10 +3,8 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 import markdown
-
 from mdx_oembed import endpoints
 from mdx_oembed.inlinepatterns import OEMBED_LINK_RE, _is_image_url, _sanitize_html
-
 
 # ---------------------------------------------------------------------------
 # Regex tests

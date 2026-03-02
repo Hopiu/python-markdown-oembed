@@ -1,12 +1,13 @@
 [project]
 name = "python-markdown-oembed"
-version = "0.3.0"
+version = "0.4.0"
 description = "Markdown extension to allow media embedding using the oEmbed standard."
 readme = {file = "README.md", content-type = "text/markdown"}
 license = "Unlicense"
 requires-python = ">=3.9"
 authors = [
     { name = "Tanner Netterville", email = "tannern@gmail.com" },
+    { name = "Benedikt Willi", email = "ben.willi@gmail.com" },
 ]
 keywords = ["markdown", "oembed"]
 classifiers = [
