@@ -1,0 +1,30 @@
+---
+request: 'https://vimeo.com/734276368/f29c542352'
+response:
+  account_type: 'live_premium'
+  author_name: 'NMC Universität Basel'
+  author_url: 'https://vimeo.com/newmediacenterunibasel'
+  description: ''
+  duration: 282
+  height: 240
+  html: >-
+    <iframe
+    src="https://player.vimeo.com/video/734276368?h=f29c542352&amp;app_id=122963"
+    width="426" height="240" frameborder="0" allow="autoplay; fullscreen; picture-in-picture"
+    title="One-Health_Tales_EN_1-02"
+    >
+    </iframe>
+  is_plus: '0'
+  provider_name: 'Vimeo'
+  provider_url: 'https://vimeo.com/'
+  thumbnail_height: 166
+  thumbnail_url: 'https://i.vimeocdn.com/video/1480489232-5ca2d723cadc09ae077c8b437581e84bd0485049780c60e218986fda60881110-d_295x166'
+  thumbnail_url_with_play_button: 'https://i.vimeocdn.com/filter/overlay?src0=https%3A%2F%2Fi.vimeocdn.com%2Fvideo%2F1480489232-5ca2d723cadc09ae077c8b437581e84bd0485049780c60e218986fda60881110-d_295x166&src1=http%3A%2F%2Ff.vimeocdn.com%2Fp%2Fimages%2Fcrawler_play.png'
+  thumbnail_width: 295
+  title: 'One-Health_Tales_EN_1-02'
+  type: 'video'
+  upload_date: '2022-07-28 04:16:03'
+  uri: '/videos/734276368:f29c542352'
+  version: '1.0'
+  video_id: 734276368
+  width: 426
