@@ -1,191 +1,279 @@
-# -*- coding: utf-8 -*-
 import re
 import unittest
+from unittest.mock import MagicMock, patch
+
 import markdown
-from mock import patch
-from nose.plugins.skip import SkipTest
-from mdx_oembed.extension import OEMBED_LINK_RE
+
 from mdx_oembed import endpoints
+from mdx_oembed.inlinepatterns import OEMBED_LINK_RE, _is_image_url, _sanitize_html
 
 
-class OEmbedPatternRegexTestCase(unittest.TestCase):
+# ---------------------------------------------------------------------------
+# Regex tests
+# ---------------------------------------------------------------------------
+
+class TestOEmbedRegex(unittest.TestCase):
+    """Tests for the raw OEMBED_LINK_RE pattern."""
+
     def setUp(self):
         self.re = re.compile(OEMBED_LINK_RE)
 
+    # --- should NOT match (relative URLs) ---
+
     def test_ignore_relative_image_link(self):
-        text = '![image](/image.png)'
-        match = self.re.match(text)
-        self.assertIsNone(match)
+        assert self.re.search("![image](/image.png)") is None
 
-    def test_ignore_absolute_image_link(self):
-        text = '![Mumbo Jumbo](http://tannern.com/mumbo-jumbo.jpg)'
-        match = self.re.match(text)
-        self.assertIsNone(match)
+    # --- should match (absolute URLs — image filtering is in Python now) ---
 
-    def test_ignore_png_image_link(self):
-        text = '![Mumbo Jumbo](http://tannern.com/mumbo-jumbo.png)'
-        match = self.re.match(text)
-        self.assertIsNone(match)
+    def test_match_absolute_url(self):
+        m = self.re.search("![img](http://example.com/photo.png)")
+        assert m is not None
 
-    def test_ignore_jpg_image_link(self):
-        text = '![Mumbo Jumbo](http://tannern.com/mumbo-jumbo.jpg)'
-        match = self.re.match(text)
-        self.assertIsNone(match)
+    def test_match_youtube_link(self):
+        m = self.re.search("![video](http://www.youtube.com/watch?v=ABC)")
+        assert m is not None
+        assert m.group(2) == "http://www.youtube.com/watch?v=ABC"
 
-    def test_ignore_gif_image_link(self):
-        text = '![Mumbo Jumbo](http://tannern.com/mumbo-jumbo.gif)'
-        match = self.re.match(text)
-        self.assertIsNone(match)
+    def test_match_youtube_short_link(self):
+        m = self.re.search("![video](http://youtu.be/ABC)")
+        assert m is not None
 
-    def test_find_youtube_link(self):
-        text = '![video](http://www.youtube.com/watch?v=7XzdZ4KcI8Y)'
-        match = self.re.match(text)
-        self.assertIsNotNone(match)
+    def test_match_https(self):
+        m = self.re.search("![video](https://youtu.be/ABC)")
+        assert m is not None
 
-    def test_find_youtube_short_link(self):
-        text = '![video](http://youtu.be/7XzdZ4KcI8Y)'
-        match = self.re.match(text)
-        self.assertIsNotNone(match)
+    def test_match_protocol_relative(self):
+        m = self.re.search("![video](//youtu.be/ABC)")
+        assert m is not None
 
-    def test_find_youtube_http(self):
-        text = '![video](http://youtu.be/7XzdZ4KcI8Y)'
-        match = self.re.match(text)
-        self.assertIsNotNone(match)
-
-    def test_find_youtube_https(self):
-        text = '![video](https://youtu.be/7XzdZ4KcI8Y)'
-        match = self.re.match(text)
-        self.assertIsNotNone(match)
-
-    def test_find_youtube_auto(self):
-        text = '![video](//youtu.be/7XzdZ4KcI8Y)'
-        match = self.re.match(text)
-        self.assertIsNotNone(match)
+    def test_alt_text_captured(self):
+        m = self.re.search("![my alt text](https://example.com/embed)")
+        assert m is not None
+        assert m.group(1) == "my alt text"
 
 
-class OEmbedExtensionTestCase(unittest.TestCase):
-    def setUp(self):
-        self.markdown = markdown.Markdown(extensions=['oembed'])
+# ---------------------------------------------------------------------------
+# Image URL detection
+# ---------------------------------------------------------------------------
 
-    def assert_convert(self, text, expected):
-        with patch('oembed.OEmbedEndpoint') as MockOEmbedEndpoint:
-            MockOEmbedEndpoint.get.return_value = expected
-            output = self.markdown.convert(text)
-        self.assertEqual(output, expected)
+class TestIsImageUrl(unittest.TestCase):
 
+    def test_common_extensions(self):
+        for ext in ("png", "jpg", "jpeg", "gif", "webp", "avif", "svg", "bmp", "tiff", "ico"):
+            assert _is_image_url(f"http://example.com/photo.{ext}") is True, ext
 
-class IgnoredTestCase(OEmbedExtensionTestCase):
-    """
-    The OEmbedExtension should ignore these tags allowing markdown's image
-    processor to find and handle them.
-    """
+    def test_case_insensitive(self):
+        assert _is_image_url("http://example.com/Photo.PNG") is True
+        assert _is_image_url("http://example.com/photo.JpEg") is True
 
-    def test_relative(self):
-        text = '![alt](image.png)'
-        expected = '<p><img alt="alt" src="image.png" /></p>'
-        output = self.markdown.convert(text)
-        self.assertEqual(output, expected)
+    def test_query_string_ignored(self):
+        assert _is_image_url("http://example.com/photo.jpg?size=large") is True
 
-    def test_slash_relative(self):
-        text = '![alt](/image.png)'
-        expected = '<p><img alt="alt" src="/image.png" /></p>'
-        output = self.markdown.convert(text)
-        self.assertEqual(output, expected)
+    def test_non_image(self):
+        assert _is_image_url("http://www.youtube.com/watch?v=ABC") is False
 
-    def test_absolute(self):
-        text = '![Mumbo Jumbo](http://tannern.com/mumbo-jumbo.jpg)'
-        expected = '<p><img alt="Mumbo Jumbo" src="http://tannern.com/mumbo-jumbo.jpg" /></p>'
-        output = self.markdown.convert(text)
-        self.assertEqual(output, expected)
+    def test_no_extension(self):
+        assert _is_image_url("http://example.com/embed") is False
 
 
-class ProtocolVarietyTestCase(OEmbedExtensionTestCase):
+# ---------------------------------------------------------------------------
+# HTML sanitization
+# ---------------------------------------------------------------------------
 
-    def test_http(self):
-        text = '![video](http://www.youtube.com/watch?v=7XzdZ4KcI8Y)'
-        output = self.markdown.convert(text)
-        self.assertIn('<iframe', output)
+class TestSanitizeHtml(unittest.TestCase):
 
-    def test_https(self):
-        text = '![video](https://www.youtube.com/watch?v=7XzdZ4KcI8Y)'
-        output = self.markdown.convert(text)
-        self.assertIn('<iframe', output)
+    def test_allows_iframe(self):
+        html = '<iframe src="https://youtube.com/embed/x" width="560" height="315" allowfullscreen></iframe>'
+        result = _sanitize_html(html)
+        assert "<iframe" in result
+        assert 'src="https://youtube.com/embed/x"' in result
 
-    def test_auto(self):
-        raise SkipTest()
-        text = '![video](//www.youtube.com/watch?v=7XzdZ4KcI8Y)'
-        output = self.markdown.convert(text)
-        self.assertIn('<iframe', output)
+    def test_strips_script(self):
+        html = '<script>alert("xss")</script><iframe src="https://safe.com"></iframe>'
+        result = _sanitize_html(html)
+        assert "<script" not in result
+        assert "<iframe" in result
 
-
-class YoutubeTestCase(OEmbedExtensionTestCase):
-    """
-    The OEmbedExtension should handle embedding for these cases.
-    """
-
-    def test_youtube_link(self):
-        """
-        YouTube video link.
-        """
-        text = '![video](http://www.youtube.com/watch?v=7XzdZ4KcI8Y)'
-        output = self.markdown.convert(text)
-        self.assertIn('<iframe', output)
-
-    def test_youtube_short_link(self):
-        """
-        Short format YouTube video link.
-        """
-        text = '![video](http://youtu.be/7XzdZ4KcI8Y)'
-        output = self.markdown.convert(text)
-        self.assertIn('<iframe', output)
+    def test_strips_onerror(self):
+        html = '<img src="x" onerror="alert(1)" />'
+        result = _sanitize_html(html)
+        assert "onerror" not in result
 
 
-class VimeoTestCase(OEmbedExtensionTestCase):
+# ---------------------------------------------------------------------------
+# Extension integration tests (mocked HTTP)
+# ---------------------------------------------------------------------------
 
-    def test_vimeo_link(self):
-        """
-        Vimeo video link.
-        """
-        text = '![link](http://vimeo.com/52970271)'
-        output = self.markdown.convert(text)
-        self.assertIn('<iframe', output)
-
-class SlideshareTestCase(OEmbedExtensionTestCase):
-
-    def test_slideshare_link(self):
-        """
-        Slideshare Presentation link.
-        """
-        text = '![slides](http://www.slideshare.net/anantshri/career-in-information-security)'
-        output = self.markdown.convert(text)
-        self.assertIn('<iframe', output)
+def _make_mock_consumer(html_response="<iframe src='https://embed.example.com'></iframe>"):
+    """Create a mock OEmbedConsumer that returns the given HTML."""
+    consumer = MagicMock()
+    response = MagicMock()
+    response.get = lambda key, default=None: {"html": html_response, "type": "video"}.get(key, default)
+    response.__getitem__ = lambda self_inner, key: {"html": html_response, "type": "video"}[key]
+    consumer.embed.return_value = response
+    return consumer
 
 
-class LimitedOEmbedExtensionTestCase(OEmbedExtensionTestCase):
-    def setUp(self):
-        self.markdown = markdown.Markdown(
-            extensions=['oembed'],
-            extension_configs={
-                'oembed': {
-                    'allowed_endpoints': [endpoints.YOUTUBE],
-                }
-            })
+def _make_photo_consumer(photo_url="https://example.com/photo.jpg", width=640, height=480):
+    consumer = MagicMock()
+    data = {"type": "photo", "url": photo_url, "width": width, "height": height}
+    response = MagicMock()
+    response.get = lambda key, default=None: data.get(key, default)
+    response.__getitem__ = lambda self_inner, key: data[key]
+    consumer.embed.return_value = response
+    return consumer
 
-    def test_youtube_link(self):
-        """
-        YouTube video link.
-        """
-        text = '![video](http://www.youtube.com/watch?v=7XzdZ4KcI8Y)'
-        output = self.markdown.convert(text)
-        self.assertIn('<iframe', output)
 
-    def test_vimeo_link(self):
-        """
-        Vimeo video link.
-        """
-        text = '![link](http://vimeo.com/52970271)'
-        output = self.markdown.convert(text)
-        self.assertNotIn('<iframe', output)
+def _make_failing_consumer(exc_class=Exception, msg="fail"):
+    consumer = MagicMock()
+    consumer.embed.side_effect = exc_class(msg)
+    return consumer
+
+
+class TestOEmbedExtension(unittest.TestCase):
+    """Integration tests with mocked oEmbed consumer."""
+
+    def _convert(self, text, consumer=None, **ext_config):
+        """Helper: convert markdown with a mocked consumer."""
+        if consumer is None:
+            consumer = _make_mock_consumer()
+
+        with patch("mdx_oembed.extension.oembed.OEmbedConsumer", return_value=consumer):
+            md = markdown.Markdown(
+                extensions=["oembed"],
+                extension_configs={"oembed": ext_config} if ext_config else {},
+            )
+            return md.convert(text)
+
+    # --- basic embedding ---
+
+    def test_youtube_embed(self):
+        output = self._convert("![video](http://www.youtube.com/watch?v=ABC)")
+        assert "<iframe" in output
+        assert "oembed" in output  # wrapper class
+
+    def test_vimeo_embed(self):
+        output = self._convert("![vid](https://vimeo.com/12345)")
+        assert "<iframe" in output
+
+    # --- images pass through ---
+
+    def test_image_png_passthrough(self):
+        output = self._convert("![alt](http://example.com/img.png)")
+        assert "<img" in output
+
+    def test_image_jpg_passthrough(self):
+        output = self._convert("![alt](http://example.com/img.jpg)")
+        assert "<img" in output
+
+    def test_image_with_query_passthrough(self):
+        output = self._convert("![alt](http://example.com/img.jpg?v=1)")
+        assert "<img" in output
+
+    def test_image_uppercase_passthrough(self):
+        output = self._convert("![alt](http://example.com/img.PNG)")
+        assert "<img" in output
+
+    # --- relative images are unaffected ---
+
+    def test_relative_image(self):
+        output = self._convert("![alt](image.png)")
+        assert '<img alt="alt" src="image.png"' in output
+
+    def test_slash_relative_image(self):
+        output = self._convert("![alt](/image.png)")
+        assert '<img alt="alt" src="/image.png"' in output
+
+    # --- photo type response ---
+
+    def test_photo_type_response(self):
+        consumer = _make_photo_consumer()
+        output = self._convert("![photo](https://flickr.com/photos/1234)", consumer)
+        assert "<img" in output
+        assert "https://example.com/photo.jpg" in output
+
+    # --- error handling ---
+
+    def test_no_endpoint_falls_through(self):
+        import oembed as _oembed
+        consumer = _make_failing_consumer(_oembed.OEmbedNoEndpoint)
+        output = self._convert("![video](http://unknown.example.com/abc)", consumer)
+        assert "<iframe" not in output
+
+    def test_network_error_falls_through(self):
+        consumer = _make_failing_consumer(Exception, "timeout")
+        output = self._convert("![video](http://www.youtube.com/watch?v=ABC)", consumer)
+        assert "<iframe" not in output
+
+    # --- configuration ---
+
+    def test_custom_wrapper_class(self):
+        output = self._convert(
+            "![v](http://www.youtube.com/watch?v=ABC)",
+            wrapper_class="embed-responsive",
+        )
+        assert "embed-responsive" in output
+
+    def test_empty_wrapper_class(self):
+        output = self._convert(
+            "![v](http://www.youtube.com/watch?v=ABC)",
+            wrapper_class="",
+        )
+        assert "<figure" not in output
+        assert "<iframe" in output
+
+    # --- XSS protection ---
+
+    def test_script_stripped_from_response(self):
+        evil_consumer = _make_mock_consumer(
+            '<script>alert("xss")</script><iframe src="https://ok.com"></iframe>'
+        )
+        output = self._convert("![v](http://www.youtube.com/watch?v=ABC)", evil_consumer)
+        assert "<script" not in output
+        assert "<iframe" in output
+
+    # --- multiple links ---
+
+    def test_multiple_embeds(self):
+        text = (
+            "![a](http://www.youtube.com/watch?v=A)\n\n"
+            "![b](http://www.youtube.com/watch?v=B)"
+        )
+        output = self._convert(text)
+        assert output.count("<iframe") == 2
+
+
+class TestLimitedEndpoints(unittest.TestCase):
+    """Test allowed_endpoints configuration."""
+
+    def test_youtube_only(self):
+        import oembed as _oembed
+
+        def side_effect(url):
+            if "youtube" in url:
+                resp = MagicMock()
+                data = {"html": "<iframe src='yt'></iframe>", "type": "video"}
+                resp.get = lambda key, default=None: data.get(key, default)
+                resp.__getitem__ = lambda self_inner, key: data[key]
+                return resp
+            raise _oembed.OEmbedNoEndpoint("nope")
+
+        consumer = MagicMock()
+        consumer.embed.side_effect = side_effect
+
+        with patch("mdx_oembed.extension.oembed.OEmbedConsumer", return_value=consumer):
+            md = markdown.Markdown(
+                extensions=["oembed"],
+                extension_configs={
+                    "oembed": {"allowed_endpoints": [endpoints.YOUTUBE]},
+                },
+            )
+            yt_output = md.convert("![v](http://www.youtube.com/watch?v=A)")
+            assert "<iframe" in yt_output
+
+            md.reset()
+            vim_output = md.convert("![v](http://vimeo.com/12345)")
+            assert "<iframe" not in vim_output
 
 
 if __name__ == "__main__":

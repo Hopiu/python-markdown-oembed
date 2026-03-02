@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 from mdx_oembed.extension import OEmbedExtension
+from mdx_oembed.version import __version__
 
-
-VERSION = '0.2.1'
+VERSION = __version__
 
 
 def makeExtension(**kwargs):

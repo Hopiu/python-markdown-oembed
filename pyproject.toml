@@ -1,0 +1,58 @@
+[project]
+name = "python-markdown-oembed"
+version = "0.3.0"
+description = "Markdown extension to allow media embedding using the oEmbed standard."
+readme = {file = "README.md", content-type = "text/markdown"}
+license = "Unlicense"
+requires-python = ">=3.9"
+authors = [
+    { name = "Tanner Netterville", email = "tannern@gmail.com" },
+]
+keywords = ["markdown", "oembed"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: Public Domain",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "python-oembed>=0.2.1",
+    "Markdown>=3.2",
+    "nh3>=0.2",
+]
+
+[project.urls]
+Homepage = "https://github.com/rennat/python-markdown-oembed"
+
+[project.entry-points."markdown.extensions"]
+oembed = "mdx_oembed:makeExtension"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "mdx_oembed/",
+    "tests.py",
+    "README.md",
+    "LICENSE",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["mdx_oembed"]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0",
+    "pytest-mock>=3.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["."]
+python_files = ["tests.py"]
