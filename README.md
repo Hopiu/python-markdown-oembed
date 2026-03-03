@@ -4,16 +4,16 @@ Markdown extension to allow media embedding using the oEmbed standard.
 
 ## Requirements
 
-- Python >= 3.9
+- Python >= 3.12
 - Markdown >= 3.2
 
 ## Installation
 
-    pip install python-markdown-oembed
+    pip install python-markdown-oembed-extension
 
 Or with [uv](https://docs.astral.sh/uv/):
 
-    uv add python-markdown-oembed
+    uv add python-markdown-oembed-extension
 
 ## Usage
 
@@ -70,6 +70,20 @@ to prevent XSS from compromised oEmbed providers. Only safe tags (`iframe`,
 A Public Domain work. Do as you wish.
 
 ## Changelog
+
+### 0.5.0
+
+- **Breaking:** requires Python >= 3.12
+- Replaced custom `html.escape()` for proper attribute escaping in photo `<img>` tags
+- HTTP status validation: non-2xx oEmbed API responses now raise `OEmbedError`
+- `addEndpoint()` is deprecated in favour of `add_endpoint()` (emits `DeprecationWarning`)
+- Added `from __future__ import annotations` to all modules
+- Added `py.typed` marker (PEP 561) for downstream type-checking support
+- Version is now sourced dynamically from `mdx_oembed/version.py` via hatch
+- Added ruff and pyright configuration in `pyproject.toml`
+- Tests converted to pure pytest (dropped `unittest.TestCase`)
+- New tests for HTTP status handling, deprecation warnings, and HTML escaping
+- Removed legacy `src/` package tree
 
 ### 0.4.0
 
