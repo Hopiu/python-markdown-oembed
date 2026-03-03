@@ -1,11 +1,16 @@
-import logging
-from posixpath import splitext
-from urllib.parse import urlparse
+from __future__ import annotations
 
-import nh3
-import oembed
-from markdown.inlinepatterns import InlineProcessor
+import html as _html
+import logging
+from os.path import splitext
+from urllib.parse import urlparse
 from xml.etree.ElementTree import Element
+
+import markdown
+import nh3
+from markdown.inlinepatterns import InlineProcessor
+
+from mdx_oembed.oembed import OEmbedConsumer, OEmbedNoEndpoint
 
 LOG = logging.getLogger(__name__)
 
@@ -19,12 +24,23 @@ _IMAGE_EXTENSIONS = frozenset({
 OEMBED_LINK_RE = r"!\[([^\]]*)\]\(((?:https?:)?//[^\)]+)\)"
 
 # Allowed HTML tags and attributes for sanitizing oEmbed responses
-_SANITIZE_TAGS = {"iframe", "video", "audio", "source", "img", "blockquote", "div", "p", "a", "span", "figure"}
+_SANITIZE_TAGS = {
+    "iframe", "video", "audio", "source", "img",
+    "blockquote", "div", "p", "a", "span", "figure",
+}
 _SANITIZE_ATTRS = {
     "*": {"class", "style", "title"},
-    "iframe": {"src", "width", "height", "frameborder", "allowfullscreen", "allow", "referrerpolicy", "sandbox"},
-    "video": {"src", "width", "height", "controls", "autoplay", "loop", "muted", "poster", "preload"},
-    "audio": {"src", "controls", "autoplay", "loop", "muted", "preload"},
+    "iframe": {
+        "src", "width", "height", "frameborder",
+        "allowfullscreen", "allow", "referrerpolicy", "sandbox",
+    },
+    "video": {
+        "src", "width", "height", "controls",
+        "autoplay", "loop", "muted", "poster", "preload",
+    },
+    "audio": {
+        "src", "controls", "autoplay", "loop", "muted", "preload",
+    },
     "source": {"src", "type"},
     "img": {"src", "alt", "width", "height", "loading"},
     "a": {"href", "target"},
@@ -49,12 +65,18 @@ def _sanitize_html(html: str) -> str:
 class OEmbedLinkPattern(InlineProcessor):
     """Inline processor that replaces Markdown image links with oEmbed content."""
 
-    def __init__(self, pattern, md=None, oembed_consumer=None, wrapper_class="oembed"):
+    def __init__(
+        self,
+        pattern: str,
+        md: markdown.Markdown | None = None,
+        oembed_consumer: OEmbedConsumer | None = None,
+        wrapper_class: str = "oembed",
+    ) -> None:
         super().__init__(pattern, md)
         self.consumer = oembed_consumer
         self.wrapper_class = wrapper_class
 
-    def handleMatch(self, m, data):
+    def handleMatch(self, m, data):  # noqa: N802
         url = m.group(2).strip()
         alt = m.group(1)
 
@@ -80,9 +102,12 @@ class OEmbedLinkPattern(InlineProcessor):
 
     def _get_oembed_html(self, url: str, alt: str = "") -> str | None:
         """Fetch oEmbed HTML for a URL, handling different response types."""
+        if self.consumer is None:
+            LOG.warning("No oEmbed consumer configured")
+            return None
         try:
             response = self.consumer.embed(url)
-        except oembed.OEmbedNoEndpoint:
+        except OEmbedNoEndpoint:
             LOG.warning("No oEmbed endpoint for URL: %s", url)
             return None
         except Exception:
@@ -99,10 +124,11 @@ class OEmbedLinkPattern(InlineProcessor):
         if photo_url:
             width = response.get("width", "")
             height = response.get("height", "")
-            escaped_alt = alt.replace('"', "&quot;")
             return (
-                f'<img src="{photo_url}" alt="{escaped_alt}"'
-                f' width="{width}" height="{height}" />'
+                f'<img src="{_html.escape(str(photo_url), quote=True)}"'
+                f' alt="{_html.escape(alt, quote=True)}"'
+                f' width="{_html.escape(str(width), quote=True)}"'
+                f' height="{_html.escape(str(height), quote=True)}" />'
             )
 
         LOG.warning("oEmbed response for %s has no 'html' or 'url' field", url)

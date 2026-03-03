@@ -1,10 +1,10 @@
 [project]
 name = "python-markdown-oembed-extension"
-version = "0.4.0"
+dynamic = ["version"]
 description = "Markdown extension to allow media embedding using the oEmbed standard."
 readme = {file = "README.md", content-type = "text/markdown"}
 license = "Unlicense"
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 authors = [
     { name = "Benedikt Willi", email = "ben.willi@gmail.com" },
     { name = "Tanner Netterville", email = "tannern@gmail.com" },
@@ -15,14 +15,11 @@ classifiers = [
     "License :: Public Domain",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Typing :: Typed",
 ]
 dependencies = [
-    "python-oembed>=0.2.1",
     "Markdown>=3.2",
     "nh3>=0.2",
 ]
@@ -36,6 +33,9 @@ oembed = "mdx_oembed:makeExtension"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "mdx_oembed/version.py"
 
 [tool.hatch.build.targets.sdist]
 include = [
@@ -52,8 +52,26 @@ packages = ["mdx_oembed"]
 dev = [
     "pytest>=7.0",
     "pytest-mock>=3.0",
+    "ruff>=0.4",
+    "pyright>=1.1",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["."]
 python_files = ["tests.py"]
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "N", "S", "B"]
+ignore = [
+    "S101",  # assert used — standard in pytest
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests.py" = ["S106"]
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "standard"

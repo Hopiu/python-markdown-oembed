@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 from markdown import Extension
-import oembed
-from python_markdown_oembed_extension.endpoints import DEFAULT_ENDPOINTS
-from python_markdown_oembed_extension.inlinepatterns import OEmbedLinkPattern, OEMBED_LINK_RE
+
+from mdx_oembed.endpoints import DEFAULT_ENDPOINTS
+from mdx_oembed.inlinepatterns import OEMBED_LINK_RE, OEmbedLinkPattern
+from mdx_oembed.oembed import OEmbedConsumer
 
 
 class OEmbedExtension(Extension):
@@ -21,7 +24,7 @@ class OEmbedExtension(Extension):
         }
         super().__init__(**kwargs)
 
-    def extendMarkdown(self, md):
+    def extendMarkdown(self, md):  # noqa: N802
         consumer = self._prepare_oembed_consumer()
         wrapper_class = self.getConfig('wrapper_class', 'oembed')
         link_pattern = OEmbedLinkPattern(
@@ -32,8 +35,7 @@ class OEmbedExtension(Extension):
 
     def _prepare_oembed_consumer(self):
         allowed_endpoints = self.getConfig('allowed_endpoints', DEFAULT_ENDPOINTS)
-        consumer = oembed.OEmbedConsumer()
+        consumer = OEmbedConsumer()
         for endpoint in (allowed_endpoints or []):
-            consumer.addEndpoint(endpoint)
+            consumer.add_endpoint(endpoint)
         return consumer
-
