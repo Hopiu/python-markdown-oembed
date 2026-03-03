@@ -1,5 +1,5 @@
 [project]
-name = "python-markdown-oembed"
+name = "python-markdown-oembed-extension"
 version = "0.4.0"
 description = "Markdown extension to allow media embedding using the oEmbed standard."
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -28,7 +28,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/rennat/python-markdown-oembed"
+Homepage = "https://github.com/Hopiu/python-markdown-oembed"
 
 [project.entry-points."markdown.extensions"]
 oembed = "mdx_oembed:makeExtension"
