@@ -6,8 +6,8 @@ readme = {file = "README.md", content-type = "text/markdown"}
 license = "Unlicense"
 requires-python = ">=3.9"
 authors = [
-    { name = "Tanner Netterville", email = "tannern@gmail.com" },
     { name = "Benedikt Willi", email = "ben.willi@gmail.com" },
+    { name = "Tanner Netterville", email = "tannern@gmail.com" },
 ]
 keywords = ["markdown", "oembed"]
 classifiers = [
